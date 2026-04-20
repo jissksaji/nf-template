@@ -1,14 +1,10 @@
-    // TODO: rename this file to something matching this workflow, e.g. exome.nf
-
 // Modules
 include { INPUT_CHECK }                 from '../modules/input_check'
-include { FASTP }                       from '../modules/fastp/main'
-include { MULTIQC }                     from './../modules/multiqc/main'
+include { STAGE_FILE as STAGE_SAMPLESHEET } from './../modules/helper/stage_file'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from './../modules/custom/dumpsoftwareversions'
 
-
 // TODO: Rename block to something matching this workflow, e.g. EXOME
-workflow MAIN {
+workflow BARBEQUE {
 
     main:
 
@@ -24,13 +20,11 @@ workflow MAIN {
 
     // TODO: Make sure this module is compatible with the samplesheet format you create
     INPUT_CHECK(samplesheet)
+        // Copy the samplesheet to the results folder
+    STAGE_SAMPLESHEET(samplesheet)
 
-    FASTP(
-        INPUT_CHECK.out.reads
-    )
-
-    ch_versions = ch_versions.mix(FASTP.out.versions)
-    multiqc_files = multiqc_files.mix(FASTP.out.json)
+    ch_versions = channel.from([])
+    multiqc_files = channel.from([])
 
     CUSTOM_DUMPSOFTWAREVERSIONS(
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
@@ -38,14 +32,14 @@ workflow MAIN {
 
     multiqc_files = multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml)
 
-    MULTIQC(
+    /*MULTIQC(
         multiqc_files.collect(),
         ch_multiqc_config,
         ch_multiqc_logo
     )
 
     emit:
-    qc = MULTIQC.out.html
+    qc = MULTIQC.out.html*/
 }
 
 // turn the summaryMap to a JSON file
